@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Animal Snap Battle | CHAOTIC DIMENSION</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Orbitron', 'Avenir Next', 'Segoe UI', system-ui, monospace;
+            background: radial-gradient(ellipse at 20% 30%, #0a0718, #02020c);
+            color: #eef5ff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Efeito grunge dimensional chaotico */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" opacity="0.08"><path fill="none" d="M0 0h800v800H0z"/><path fill="%2300ffff" d="M200 200L250 180L270 220L230 240zM500 400L560 370L590 430L530 460zM120 600L190 580L210 650L140 670zM650 150L720 130L740 200L670 220z"/><circle cx="400" cy="400" r="30" fill="none" stroke="%23ff44ff" stroke-width="2"/><path d="M300 500L350 480L380 520L330 540Z" fill="%23ffaa33" opacity="0.5"/></svg>');
+            background-repeat: repeat;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: overlay;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            padding: 1rem 20px;
+            text-align: center;
+            font-size: 1.7rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #ff00c3;
+            border-bottom: 3px solid #0ff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+            font-family: 'Orbitron', monospace;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px 18px 40px;
+        }
+
+        /* Menu portais caóticos */
+        .menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+            margin-bottom: 35px;
+        }
+
+        button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 60px;
+            background: rgba(20, 10, 50, 0.7);
+            backdrop-filter: blur(12px);
+            color: #ffffff;
+            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid rgba(0, 210, 255, 0.7);
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            background: #00a6c4;
+            box-shadow: 0 0 25px cyan, inset 0 0 10px white;
+            border-color: white;
+            color: black;
+        }
+
+        .section {
+            display: none;
+            animation: glitchIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .active {
+            display: block;
+        }
+
+        @keyframes glitchIn {
+            0% { opacity: 0; transform: translateY(20px) skewX(2deg); filter: blur(4px);}
+            100% { opacity: 1; transform: translateY(0) skewX(0); filter: blur(0);}
+        }
+
+        /* Caixa câmera e elementos */
+        .camera-box, .trade-box {
+            background: rgba(8, 6, 22, 0.75);
+            backdrop-filter: blur(14px);
+            border-radius: 48px;
+            padding: 20px 20px 30px;
+            text-align: center;
+            border: 1px solid rgba(0, 255, 255, 0.6);
+            box-shadow: 0 20px 35px -12px black, inset 0 0 30px rgba(0,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        video, canvas {
+            width: 100%;
+            max-width: 460px;
+            border-radius: 30px;
+            border: 3px solid #ff44dd;
+            box-shadow: 0 0 20px #ff44dd, 0 0 5px cyan;
+            background: #01000c;
+            object-fit: cover;
+        }
+
+        /* estilo CARTAS CHAOTIC */
+        .card-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .card {
+            width: 280px;
+            background: linear-gradient(145deg, #151a30, #0b0f20);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 20px 30px -12px black, 0 0 0 2px rgba(255, 0, 255, 0.4) inset, 0 0 12px cyan;
+            transition: all 0.25s ease;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 0 30px #0ff, 0 0 15px #f0f;
+            border-color: magenta;
+        }
+
+        .card img {
+            width: 100%;
+            height: 230px;
+            object-fit: cover;
+            border-bottom: 3px solid #0ff;
+        }
+
+        .card-content {
+            padding: 16px 12px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            color: #0ff;
+            font-size: 1.5rem;
+            text-shadow: 0 0 6px blue;
+            letter-spacing: 1px;
+        }
+
+        .stat {
+            font-size: 0.8rem;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #3d3f6e;
+            font-family: monospace;
+        }
+
+        .rarity {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 50px;
+            margin-top: 12px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .comum { background: #3b4b6e; box-shadow: 0 0 5px silver; border: 1px solid #a0a0c0;}
+        .raro { background: #1e40af; box-shadow: 0 0 10px #3b82f6; border: 1px solid #60a5fa;}
+        .epico { background: #7e22ce; box-shadow: 0 0 12px #d8b4fe; border: 1px solid #e9d5ff;}
+        .lendario { background: #f59e0b; color: #0a0a0a; box-shadow: 0 0 20px #ffd966; border: 1px solid gold;}
+
+        /* Arena batalha estilo chaotic duel */
+        .battle-screen {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 35px;
+        }
+        .battle-card {
+            width: 310px;
+            background: #0c0922e6;
+            backdrop-filter: blur(16px);
+            padding: 20px;
+            border-radius: 42px;
+            border: 2px solid magenta;
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
+            text-align: center;
+            transition: 0.2s;
+        }
+        .battle-card h3 {
+            color: #ff66cc;
+            text-shadow: 0 0 5px magenta;
+        }
+        .life-bar {
+            width: 100%;
+            height: 20px;
+            background: #2a1b3c;
+            border-radius: 40px;
+            overflow: hidden;
+            margin: 12px 0;
+            border: 1px solid cyan;
+        }
+        .life {
+            height: 100%;
+            background: linear-gradient(90deg, #ff44aa, #ffcc44);
+            width: 100%;
+            transition: width 0.2s ease;
+            box-shadow: 0 0 8px #ff66aa;
+        }
+        .log {
+            background: #040014bb;
+            backdrop-filter: blur(20px);
+            padding: 18px;
+            border-radius: 35px;
+            margin-top: 25px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border-left: 8px solid #ff00c3;
+            font-weight: bold;
+        }
+        .arena-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0 5px;
+        }
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #7882a4;
+            font-size: 0.7rem;
+            border-top: 1px solid #2a2a50;
+        }
+        .glow-text {
+            text-shadow: 0 0 6px cyan;
+        }
+        .chaotic-badge {
+            background: #ff00c3;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 680px) {
+            .battle-card { width: 260px; }
+            button { padding: 8px 16px; font-size: 0.7rem;}
+        }
+    </style>
+</head>
+<body>
+
+<header>⚡ ANIMAL SNAP BATTLE | CHAOTIC EDITION ⚡<span style="font-size: 0.6rem; display:block;">CÂMARA · CÓDIGO PERDIDO · ARENAS DIMENSIONAIS</span></header>
+
+<div class="container">
+    <div class="menu">
+        <button onclick="showSection('cameraSection')">📸 CÂMARA PERDIDA</button>
+        <button onclick="showSection('collectionSection')">📖 CODEX CAÓTICO</button>
+        <button onclick="showSection('battleSection')">⚡ ARÉNA MUTANTE</button>
+        <button onclick="showSection('tradeSection')">🔄 NEXUS TROCA</button>
+    </div>
+
+    <!-- SEÇÃO CÂMERA SCANNER -->
+    <div id="cameraSection" class="section active">
+        <div class="camera-box">
+            <h2>🌀 PORTAL DE CAPTURA DIGITAL 🌀</h2>
+            <p style="margin-bottom: 10px;">aponte para qualquer criatura real e libere seu código caótico</p>
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <br><br>
+            <button onclick="capturePhoto()">✨ CAPTURAR & GERAR CARTA ✨</button>
+            <div id="generatedCard" class="generated-card-preview" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO COLEÇÃO (CODEX) -->
+    <div id="collectionSection" class="section">
+        <div style="background:#05020faa; border-radius: 38px; padding: 20px;">
+            <h2 style="text-align:center;">📀 CODEX CAÓTICO 📀</h2>
+            <div id="collectionCards" class="card-area">🌀 Nenhuma carta dimensional capturada. Use a câmera scanner!</div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO BATALHA -->
+    <div id="battleSection" class="section">
+        <div class="camera-box" style="padding: 20px;">
+            <h2>⚔️ COLISEU DAS SOMBRAS ⚔️</h2>
+            <div class="battle-screen">
+                <div class="battle-card">
+                    <div class="chaotic-badge">GUERREIRO CAÓTICO</div>
+                    <h3>🐉 SEU SER</h3>
+                    <div id="playerCard">Nenhum aliado convocado</div>
+                    <div class="life-bar"><div id="playerLife" class="life" style="width:100%"></div></div>
+                    <span>❤️ ENERGIA CAÓTICA</span>
+                </div>
+                <div class="battle-card">
+                    <div class="chaotic-badge">ABOMINAÇÃO MUTANTE</div>
+                    <h3>👾 INIMIGO DIMENSIONAL</h3>
+                    <div id="enemyCard">Aguardando portal</div>
+                    <div class="life-bar"><div id="enemyLife" class="life" style="width:100%"></div></div>
+                    <span>💀 PODER DAS TREVAS</span>
+                </div>
+            </div>
+            <div class="arena-buttons">
+                <button onclick="startBattle()">🌀 ABRIR PORTAL BATALHA</button>
+                <button onclick="attack()">🗡️ ATAQUE CAÓTICO</button>
+            </div>
+            <div class="log" id="battleLog">
+                🌌 O NEXUS está silencioso... Invoque um animal e inicie a batalha dimensional.
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO TROCAS NEXUS -->
+    <div id="tradeSection" class="section">
+        <div class="trade-box">
+            <h2>🔄 NEXUS DE TROCAS PERDIDAS 🔄</h2>
+            <p>Conecte-se ao fluxo caótico e troque criaturas com outros Mestres</p>
+            <button onclick="fakeTrade()">🔍 BUSCAR TROCA DIMENSIONAL</button>
+            <br><br>
+            <div id="tradeResult" style="background:#03001aaa; border-radius: 32px; padding: 20px;"></div>
+        </div>
+    </div>
+
+    <footer>⚡ Animal Snap Battle - Caotic Dimension ⚡ Capture Monstros, Domine a Arena</footer>
+</div>
+
+<script>
+    // ================================
+    // BESTIÁRIO CHAOTIC - CRIATURAS
+    // ================================
+    const animals = [
+        { name:'Lobo Urbano', animal:'Cachorro', element:'Terra', rarity:'Comum', attack:62, defense:52, speed:68, skill:'Mordida Alpha' },
+        { name:'Felino Sombrio', animal:'Gato', element:'Sombras', rarity:'Raro', attack:72, defense:58, speed:92, skill:'Garras Noturnas' },
+        { name:'Asa Celestial', animal:'Pássaro', element:'Vento', rarity:'Épico', attack:86, defense:52, speed:103, skill:'Tempestade dos Céus' },
+        { name:'Tigre Flamejante', animal:'Tigre', element:'Fogo', rarity:'Lendário', attack:97, defense:82, speed:90, skill:'Explosão Selvagem' },
+        { name:'Rinoceronte Blindado', animal:'Rinoceronte', element:'Metal', rarity:'Raro', attack:80, defense:94, speed:48, skill:'Carga Ferro' },
+        { name:'Coruja Sábia', animal:'Coruja', element:'Psíquico', rarity:'Épico', attack:74, defense:63, speed:98, skill:'Visão Mística' },
+        { name:'Dragão Elétrico', animal:'Lagarto', element:'Raio', rarity:'Lendário', attack:100, defense:72, speed:87, skill:'Tempestade de Raios' },
+        { name:'Macaco Ágil', animal:'Macaco', element:'Vento', rarity:'Comum', attack:57, defense:43, speed:112, skill:'Tropical Kick' },
+        { name:'Serpe Abissal', animal:'Serpente', element:'Água', rarity:'Épico', attack:84, defense:70, speed:80, skill:'Maré Negra' }
+    ];
+
+    let collection = [];
+    let playerHP = 100, enemyHP = 100;
+    let playerBattleCard = null, enemyBattleCard = null;
+
+    // ========== CÂMERA ==========
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        .then(stream => { video.srcObject = stream; })
+        .catch(() => {
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(e => alert("Permissão de câmera necessária para capturar criaturas caóticas"));
+        });
+    } else {
+        alert("Navegador sem suporte a câmera dimensional");
+    }
+
+    function rarityClass(rarity) {
+        if (rarity === 'Comum') return 'comum';
+        if (rarity === 'Raro') return 'raro';
+        if (rarity === 'Épico') return 'epico';
+        return 'lendario';
+    }
+
+    function renderCapturedCard(card) {
+        const previewDiv = document.getElementById('generatedCard');
+        previewDiv.innerHTML = `
+            <div style="margin-top:20px; border-top:3px solid #ff44dd; padding-top:18px;">
+                <h3>✨ NOVA CARTA DIMENSIONAL ✨</h3>
+                <div class="card" style="margin:auto; width:270px;">
+                    <img src="${card.image}" alt="criatura">
+                    <div class="card-content">
+                        <h2>${card.name}</h2>
+                        <div class="stat"><span>🐾 Espécie:</span><span>${card.animal}</span></div>
+                        <div class="stat"><span>🌀 Elemento:</span><span>${card.element}</span></div>
+                        <div class="stat"><span>⚔️ Ataque:</span><span>${card.attack}</span></div>
+                        <div class="stat"><span>🛡️ Defesa:</span><span>${card.defense}</span></div>
+                        <div class="stat"><span>💨 Velocidade:</span><span>${card.speed}</span></div>
+                        <div class="stat"><span>🎯 Habilidade:</span><span>${card.skill}</span></div>
+                        <div class="rarity ${rarityClass(card.rarity)}">${card.rarity}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCollection() {
+        const area = document.getElementById('collectionCards');
+        if (!area) return;
+        if (collection.length === 0) {
+            area.innerHTML = `<div style="text-align:center; padding:50px;">🌀 Nenhuma carta capturada. Use o Scanner Dimensional! 🌀</div>`;
+            return;
+        }
+        area.innerHTML = '';
+        collection.forEach(card => {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            cardDiv.innerHTML = `
+                <img src="${card.image}" alt="${card.name}">
+                <div class="card-content">
+                    <h2>${card.name}</h2>
+                    <div class="stat"><span>Elemento:</span><span>${card.element}</span></div>
+                    <div class="stat"><span>Ataque:</span><span>${card.attack}</span></div>
+                    <div class="stat"><span>Defesa:</span><span>${card.defense}</span></div>
+                    <div class="stat"><span>Velocidade:</span><span>${card.speed}</span></div>
+                    <div class="rarity ${rarityClass(card.rarity)}">${card.rarity}</div>
+                </div>
+            `;
+            area.appendChild(cardDiv);
+        });
+    }
+
+    function capturePhoto() {
+        if (!video.videoWidth || video.videoWidth === 0) {
+            alert("Câmera não iniciada. Aguarde ou recarregue.");
+            return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+        const attackVariation = Math.floor(Math.random() * 11) - 4;
+        const defenseVariation = Math.floor(Math.random() * 11) - 4;
+        let finalAttack = Math.max(35, randomAnimal.attack + attackVariation);
+        let finalDefense = Math.max(30, randomAnimal.defense + defenseVariation);
+        const newCard = {
+            ...randomAnimal,
+            attack: finalAttack,
+            defense: finalDefense,
+            image: imageData,
+            id: Date.now() + Math.random() * 10000
+        };
+        collection.push(newCard);
+        renderCollection();
+        renderCapturedCard(newCard);
+        // feedback caótico
+        const msg = document.createElement('div');
+        msg.innerText = `✔ ${newCard.name} adicionado ao Codex!`;
+        msg.style.position = 'fixed'; msg.style.bottom = '20px'; msg.style.right='20px'; msg.style.background='magenta'; msg.style.padding='8px 16px'; msg.style.borderRadius='30px';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 1800);
+    }
+
+    // ========== BATALHA ESTILO CHAOTIC ==========
+    function updateLifeBars() {
+        const playerLifeDiv = document.getElementById('playerLife');
+        const enemyLifeDiv = document.getElementById('enemyLife');
+        if (playerLifeDiv) playerLifeDiv.style.width = Math.max(0, playerHP) + '%';
+        if (enemyLifeDiv) enemyLifeDiv.style.width = Math.max(0, enemyHP) + '%';
+    }
+
+    function startBattle() {
+        if (collection.length === 0) {
+            alert("Seu Codex está vazio! Capture criaturas antes de batalhar.");
+            return;
+        }
+        const randomIdx = Math.floor(Math.random() * collection.length);
+        playerBattleCard = { ...collection[randomIdx] };
+        const randomEnemy = animals[Math.floor(Math.random() * animals.length)];
+        enemyBattleCard = { ...randomEnemy };
+        playerHP = 85 + Math.floor(playerBattleCard.defense / 1.6);
+        enemyHP = 80 + Math.floor(enemyBattleCard.defense / 1.5);
+        if (playerHP > 165) playerHP = 165;
+        if (enemyHP > 170) enemyHP = 170;
+        document.getElementById('playerCard').innerHTML = `
+            <h3>🔥 ${playerBattleCard.name}</h3>
+            <p>⚔️ ATK: ${playerBattleCard.attack}</p>
+            <p>🛡️ DEF: ${playerBattleCard.defense}</p>
+            <p>🌀 ${playerBattleCard.skill}</p>
+            <span class="chaotic-badge">${playerBattleCard.rarity}</span>
+        `;
+        document.getElementById('enemyCard').innerHTML = `
+            <h3>👾 ${enemyBattleCard.name}</h3>
+            <p>⚔️ ATK: ${enemyBattleCard.attack}</p>
+            <p>🛡️ DEF: ${enemyBattleCard.defense}</p>
+            <p>💢 ${enemyBattleCard.skill}</p>
+            <span class="chaotic-badge">${enemyBattleCard.rarity}</span>
+        `;
+        updateLifeBars();
+        document.getElementById('battleLog').innerHTML = `🌀 PORTAL ABERTO! ${playerBattleCard.name} vs ${enemyBattleCard.name}. Libere o ataque!`;
+    }
+
+    function attack() {
+        if (!playerBattleCard || !enemyBattleCard) {
+            alert("Inicie uma batalha dimensional primeiro!");
+            return;
+        }
+        if (playerHP <= 0) {
+            document.getElementById('battleLog').innerHTML = "❌ Você foi consumido pelas sombras. Invoque novo portal!";
+            return;
+        }
+        if (enemyHP <= 0) {
+            document.getElementById('battleLog').innerHTML = "🏆 Vitória! O inimigo dimensional ruiu. Inicie outra batalha!";
+            return;
+        }
+        let playerDamage = Math.floor((playerBattleCard.attack * (Math.random() * 0.7 + 0.6)) + (playerBattleCard.speed / 11));
+        let enemyDamage = Math.floor((enemyBattleCard.attack * (Math.random() * 0.7 + 0.6)) + (enemyBattleCard.speed / 11));
+        playerDamage = Math.max(9, playerDamage);
+        enemyDamage = Math.max(9, enemyDamage);
+        const playerDefReduction = Math.floor(playerBattleCard.defense / 17);
+        const enemyDefReduction = Math.floor(enemyBattleCard.defense / 17);
+        const finalEnemyDamage = Math.max(6, enemyDamage - playerDefReduction);
+        const finalPlayerDamage = Math.max(6, playerDamage - enemyDefReduction);
+        enemyHP -= finalPlayerDamage;
+        playerHP -= finalEnemyDamage;
+        if (enemyHP < 0) enemyHP = 0;
+        if (playerHP < 0) playerHP = 0;
+        updateLifeBars();
+        let logMsg = `💥 ${playerBattleCard.name} desfere ${finalPlayerDamage} de dano caótico!<br>😈 ${enemyBattleCard.name} revida com ${finalEnemyDamage} pontos!`;
+        // Habilidades lendárias / épicas mais radicais
+        if (playerBattleCard.rarity === 'Lendário' && Math.random() > 0.65) {
+            const extra = Math.floor(finalPlayerDamage * 0.55);
+            enemyHP -= extra;
+            if (enemyHP < 0) enemyHP = 0;
+            updateLifeBars();
+            logMsg += `<br>✨ HABILIDADE LENDÁRIA: ${playerBattleCard.skill} causa +${extra} de caos!`;
+        }
+        if (enemyBattleCard.rarity === 'Lendário' && Math.random() > 0.65) {
+            const extraE = Math.floor(finalEnemyDamage * 0.55);
+            playerHP -= extraE;
+            if (playerHP < 0) playerHP = 0;
+            updateLifeBars();
+            logMsg += `<br>🌑 PODER INIMIGO: ${enemyBattleCard.skill} drena +${extraE} de alma!`;
+        }
+        if (enemyHP <= 0) {
+            logMsg += `<br><br>🏆 VITÓRIA CAÓTICA! Você destruiu o oponente dimensional! 🏆`;
+            document.getElementById('battleLog').innerHTML = logMsg;
+            playerBattleCard = null;
+        } else if (playerHP <= 0) {
+            logMsg += `<br><br>💀 DERROTA... Seu ser foi aniquilado. Invoque nova batalha 💀`;
+            document.getElementById('battleLog').innerHTML = logMsg;
+            playerBattleCard = null;
+        } else {
+            document.getElementById('battleLog').innerHTML = logMsg;
+        }
+    }
+
+    // ========== TROCAS AVANÇADAS COM ESTILO ==========
+    function fakeTrade() {
+        if (collection.length === 0) {
+            document.getElementById('tradeResult').innerHTML = `<p style="color:#f0f;">⚠️ Sem cartas para trocar, capture seres no scanner.</p>`;
+            return;
+        }
+        const tradePool = [...animals];
+        const randomCardOffer = tradePool[Math.floor(Math.random() * tradePool.length)];
+        const myRandomCard = collection[Math.floor(Math.random() * collection.length)];
+        let tradeHtml = `
+            <div style="text-align:center;">
+                <h3>🔁 NEXUS CAÓTICO ATIVO</h3>
+                <p style="background:#0e0a2a; border-radius:28px; padding:16px;">
+                    <strong style="color:#ff44ff;">Viajante Dimensional</strong> oferece:<br>
+                    🃏 <span style="font-size:1.5rem;color:#ffcc44;">${randomCardOffer.name}</span> (${randomCardOffer.rarity})<br>
+                    pela sua carta:<br>
+                    🎴 <strong>${myRandomCard.name}</strong> (${myRandomCard.rarity})
+                </p>
+                <div style="display:flex; gap:20px; justify-content:center; margin-top:16px;">
+                    <button onclick="acceptTrade('${myRandomCard.id}', '${randomCardOffer.name}', '${randomCardOffer.rarity}', '${randomCardOffer.name}', '${randomCardOffer.animal}', '${randomCardOffer.element}', ${randomCardOffer.attack}, ${randomCardOffer.defense}, ${randomCardOffer.speed}, '${randomCardOffer.skill}')">✅ ACEITAR TROCA</button>
+                    <button onclick="document.getElementById('tradeResult').innerHTML='<p>🌀 Troca recusada, o fluxo continua...</p>'">❌ RECUSAR</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('tradeResult').innerHTML = tradeHtml;
+        window.pendingOffer = { offered: randomCardOffer, myId: myRandomCard.id };
+    }
+
+    window.acceptTrade = function(myCardId, offerNameRaw, offerRarity, fullName, animal, element, attack, defense, speed, skill) {
+        const idx = collection.findIndex(c => c.id == myCardId);
+        if (idx === -1) {
+            document.getElementById('tradeResult').innerHTML = "<p>❌ Erro na troca dimensional.</p>";
+            return;
+        }
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 400; tempCanvas.height = 400;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.fillStyle = "#1a0e30";
+        tCtx.fillRect(0,0,400,400);
+        tCtx.fillStyle = "#ff44ff";
+        tCtx.font = "bold 24px Orbitron";
+        tCtx.fillText(fullName, 70, 190);
+        tCtx.fillStyle = "#0ff";
+        tCtx.font = "18px monospace";
+        tCtx.fillText("Carta do Nexus", 130, 280);
+        const tradeImg = tempCanvas.toDataURL();
+        const newCard = {
+            name: fullName, animal, element, rarity: offerRarity, attack, defense, speed, skill,
+            image: tradeImg, id: Date.now()
+        };
+        collection.splice(idx, 1);
+        collection.push(newCard);
+        renderCollection();
+        document.getElementById('tradeResult').innerHTML = `<div style="background:#2c1750; border-radius:30px; padding:20px;">🎉 TROCA CONCLUÍDA! Você adquiriu <strong style="color:gold;">${fullName}</strong> (${offerRarity}) e liberou sua carta antiga. 🎉</div>`;
+        setTimeout(() => showSection('collectionSection'), 1300);
+    };
+
+    // ========== NAVEGAÇÃO ==========
+    function showSection(sectionId) {
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(sec => sec.classList.remove('active'));
+        const target = document.getElementById(sectionId);
+        if (target) target.classList.add('active');
+        if (sectionId === 'collectionSection') renderCollection();
+        if (sectionId === 'battleSection' && !playerBattleCard) {
+            document.getElementById('battleLog').innerHTML = "⚔️ Abra um portal (Iniciar Batalha) para enfrentar criaturas do caos!";
+        }
+    }
+
+    renderCollection();
+</script>
+</body>
+</html>
