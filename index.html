@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Animal Snap Battle | ARENA FUTURISTA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* mais fluidez em toques */
+        }
+
+        body {
+            font-family: 'Orbitron', 'Segoe UI', 'Arial', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0a0f2a, #030617);
+            color: #eef5ff;
+            overflow-x: hidden;
+        }
+
+        /* efeito scanline futurista */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,255,255,0.02) 0px, rgba(0,255,255,0.02) 2px, transparent 2px, transparent 6px);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        header {
+            background: linear-gradient(135deg, #00c6ff, #0072ff, #6a00ff);
+            padding: 1.2rem 20px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-shadow: 0 0 12px cyan, 0 0 5px blue;
+            box-shadow: 0 0 25px rgba(0,255,255,0.6);
+            border-bottom: 2px solid #0ff;
+            backdrop-filter: blur(2px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        /* menu neon */
+        .menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 40px;
+            background: rgba(6, 182, 212, 0.2);
+            backdrop-filter: blur(8px);
+            color: white;
+            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+            border: 1px solid rgba(6, 182, 212, 0.7);
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            background: #06b6d4;
+            box-shadow: 0 0 20px cyan;
+            border-color: white;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* câmera box */
+        .camera-box, .trade-box {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 25px 20px;
+            text-align: center;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 20px 35px -15px black;
+            margin-bottom: 30px;
+        }
+
+        video, canvas {
+            width: 100%;
+            max-width: 450px;
+            border-radius: 28px;
+            border: 3px solid #0ff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+            background: #000;
+            object-fit: cover;
+        }
+
+        .card-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .card {
+            width: 270px;
+            background: linear-gradient(145deg, #101e32, #07111f);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px -8px black, 0 0 0 1px rgba(0, 255, 255, 0.2) inset;
+            transition: 0.25s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 0 28px rgba(0, 230, 250, 0.5);
+            border-color: cyan;
+        }
+
+        .card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 2px solid cyan;
+        }
+
+        .card-content {
+            padding: 18px 12px;
+        }
+
+        .card h2 {
+            color: #0ff;
+            font-size: 1.5rem;
+            text-shadow: 0 0 5px blue;
+            margin-bottom: 12px;
+        }
+
+        .stat {
+            font-size: 0.85rem;
+            margin: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #2a3a60;
+        }
+
+        .rarity {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 40px;
+            margin-top: 12px;
+            font-weight: bold;
+            text-align: center;
+            width: auto;
+            font-size: 0.8rem;
+        }
+
+        .comum { background: #3b4b6e; box-shadow: 0 0 5px gray; }
+        .raro { background: #1e40af; box-shadow: 0 0 8px #3b82f6; }
+        .epico { background: #7e22ce; box-shadow: 0 0 12px #c084fc; }
+        .lendario { background: #f59e0b; color: black; box-shadow: 0 0 15px gold; }
+
+        .battle-screen {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+        .battle-card {
+            width: 300px;
+            background: #0b1424e0;
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 32px;
+            border: 1px solid cyan;
+            text-align: center;
+        }
+        .life-bar {
+            width: 100%;
+            height: 18px;
+            background: #2e3a55;
+            border-radius: 40px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .life {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #a3e635);
+            width: 100%;
+            transition: width 0.2s ease;
+            box-shadow: 0 0 6px #a3ff00;
+        }
+        .log {
+            background: #030617aa;
+            backdrop-filter: blur(16px);
+            padding: 18px;
+            border-radius: 28px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 1rem;
+            border-left: 6px solid #0ff;
+        }
+        .trade-box {
+            background: #0b1222dd;
+        }
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #5f7f9e;
+            font-size: 0.8rem;
+        }
+        .arena-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .generated-card-preview {
+            margin-top: 20px;
+        }
+        @media (max-width: 680px) {
+            .battle-card { width: 260px; }
+            button { padding: 8px 16px; font-size: 0.8rem;}
+        }
+        .neon-text {
+            text-shadow: 0 0 6px cyan;
+        }
+        .badge {
+            background: #00acc1;
+            border-radius: 30px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>⚡ ANIMAL SNAP BATTLE ⚡<span style="font-size: 0.7rem; display:block;">| CÂMERA · COLETA · BATALHA FUTURISTA |</span></header>
+
+<div class="container">
+    <div class="menu">
+        <button onclick="showSection('cameraSection')">📸 CÂMERA</button>
+        <button onclick="showSection('collectionSection')">📚 COLEÇÃO</button>
+        <button onclick="showSection('battleSection')">⚔️ BATALHA</button>
+        <button onclick="showSection('tradeSection')">🔄 TROCAS</button>
+    </div>
+
+    <!-- SEÇÃO CÂMERA -->
+    <div id="cameraSection" class="section active">
+        <div class="camera-box">
+            <h2>🔮 SCANEAR ANIMAL REAL</h2>
+            <p style="margin-bottom: 12px;">aponte para um animal ou objeto e capture</p>
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <br><br>
+            <button onclick="capturePhoto()">📸 CAPTURAR & CRIAR CARTA</button>
+            <div id="generatedCard" class="generated-card-preview"></div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO COLEÇÃO -->
+    <div id="collectionSection" class="section">
+        <div style="background:#0a1022aa; border-radius: 32px; padding: 15px;">
+            <h2>🌟 MINHA COLEÇÃO DE CARTAS 🌟</h2>
+            <div id="collectionCards" class="card-area">⚠️ Nenhuma carta capturada ainda. Use a câmera!</div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO BATALHA -->
+    <div id="battleSection" class="section">
+        <div class="camera-box" style="padding: 20px;">
+            <h2>⚔️ ARENA DIGITAL ⚔️</h2>
+            <div class="battle-screen">
+                <div class="battle-card">
+                    <h3>🐺 SEU CAMPEÃO</h3>
+                    <div id="playerCard">Nenhum animal selecionado</div>
+                    <div class="life-bar"><div id="playerLife" class="life" style="width:100%"></div></div>
+                    <span>❤️ VIDA</span>
+                </div>
+                <div class="battle-card">
+                    <h3>👾 INIMIGO SELVAGEM</h3>
+                    <div id="enemyCard">Aguardando batalha</div>
+                    <div class="life-bar"><div id="enemyLife" class="life" style="width:100%"></div></div>
+                    <span>💀 VIDA</span>
+                </div>
+            </div>
+            <div class="arena-buttons">
+                <button onclick="startBattle()">⚡ INICIAR BATALHA</button>
+                <button onclick="attack()">🗡️ ATACAR</button>
+            </div>
+            <div class="log" id="battleLog">
+                🌌 Pronto para lutar! Inicie uma batalha com um dos seus monstros.
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO TROCAS -->
+    <div id="tradeSection" class="section">
+        <div class="trade-box">
+            <h2>🔄 PORTAL DE TROCAS 🔄</h2>
+            <p>Conecte-se a rede Neural e troque cartas com outros treinadores</p>
+            <button onclick="fakeTrade()">🔍 BUSCAR TROCA ONLINE</button>
+            <br><br>
+            <div id="tradeResult" style="background:#030a1a; border-radius: 20px; padding: 20px;"></div>
+        </div>
+    </div>
+
+    <footer>Animal Snap Battle © 2026 — Capture, Evolua, Conquiste! Futurista 🔥</footer>
+</div>
+
+<script>
+    // ------------------------------
+    // 1. DEFININDO ANIMAIS/BESTIÁRIO
+    // ------------------------------
+    const animals = [
+        { name:'Lobo Urbano', animal:'Cachorro', element:'Terra', rarity:'Comum', attack:60, defense:50, speed:65, skill:'Mordida Alpha' },
+        { name:'Felino Sombrio', animal:'Gato', element:'Sombras', rarity:'Raro', attack:70, defense:55, speed:90, skill:'Garras Noturnas' },
+        { name:'Asa Celestial', animal:'Pássaro', element:'Vento', rarity:'Épico', attack:85, defense:50, speed:100, skill:'Tempestade dos Céus' },
+        { name:'Tigre Flamejante', animal:'Tigre', element:'Fogo', rarity:'Lendário', attack:95, defense:80, speed:88, skill:'Explosão Selvagem' },
+        { name:'Rinoceronte Blindado', animal:'Rinoceronte', element:'Metal', rarity:'Raro', attack:78, defense:92, speed:45, skill:'Carga Ferro' },
+        { name:'Coruja Sábia', animal:'Coruja', element:'Psíquico', rarity:'Épico', attack:72, defense:60, speed:95, skill:'Visão Mística' },
+        { name:'Dragão Elétrico', animal:'Lagarto', element:'Raio', rarity:'Lendário', attack:98, defense:70, speed:85, skill:'Tempestade de Raios' },
+        { name:'Macaco Ágil', animal:'Macaco', element:'Vento', rarity:'Comum', attack:55, defense:40, speed:110, skill:'Tropical Kick' }
+    ];
+
+    // Coleção de cartas do jogador
+    let collection = [];
+
+    // Variáveis da batalha
+    let playerHP = 100;
+    let enemyHP = 100;
+    let playerBattleCard = null;   // carta selecionada da coleção (aleatória na start)
+    let enemyBattleCard = null;
+
+    // ------------------------------
+    // 2. CÂMERA + CAPTURA + CRIAÇÃO CARTA
+    // ------------------------------
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Inicializa câmera traseira/frontal com boa compatibilidade
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            // fallback: qualquer câmera disponível
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err2 => { alert("Permita acesso à câmera para capturar animais!"); });
+        });
+    } else {
+        alert("Seu navegador não suporta acesso à câmera.");
+    }
+
+    // Gera classe rarity visual
+    function rarityClass(rarity) {
+        if (rarity === 'Comum') return 'comum';
+        if (rarity === 'Raro') return 'raro';
+        if (rarity === 'Épico') return 'epico';
+        return 'lendario';
+    }
+
+    // Renderiza a carta que acabou de ser capturada (mini preview)
+    function renderCapturedCard(card) {
+        const previewDiv = document.getElementById('generatedCard');
+        previewDiv.innerHTML = `
+            <div style="margin-top:20px; border-top:2px solid cyan; padding-top:15px;">
+                <h3>✨ NOVA CARTA ADQUIRIDA ✨</h3>
+                <div class="card" style="margin:auto; width:260px;">
+                    <img src="${card.image}" alt="animal capture">
+                    <div class="card-content">
+                        <h2>${card.name}</h2>
+                        <div class="stat"><span>🐾 Animal:</span><span>${card.animal}</span></div>
+                        <div class="stat"><span>🌀 Elemento:</span><span>${card.element}</span></div>
+                        <div class="stat"><span>⚔️ Ataque:</span><span>${card.attack}</span></div>
+                        <div class="stat"><span>🛡️ Defesa:</span><span>${card.defense}</span></div>
+                        <div class="stat"><span>⚡ Velocidade:</span><span>${card.speed}</span></div>
+                        <div class="stat"><span>🎯 Habilidade:</span><span>${card.skill}</span></div>
+                        <div class="rarity ${rarityClass(card.rarity)}">${card.rarity}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Atualiza toda a coleção (grid principal)
+    function renderCollection() {
+        const area = document.getElementById('collectionCards');
+        if (!area) return;
+        if (collection.length === 0) {
+            area.innerHTML = `<div style="text-align:center; padding:40px;">📭 Nenhuma carta ainda. Use a câmera para capturar animais!</div>`;
+            return;
+        }
+        area.innerHTML = '';
+        collection.forEach(card => {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            cardDiv.innerHTML = `
+                <img src="${card.image}" alt="${card.name}">
+                <div class="card-content">
+                    <h2>${card.name}</h2>
+                    <div class="stat"><span>Espécie:</span><span>${card.animal}</span></div>
+                    <div class="stat"><span>Elemento:</span><span>${card.element}</span></div>
+                    <div class="stat"><span>Ataque:</span><span>${card.attack}</span></div>
+                    <div class="stat"><span>Defesa:</span><span>${card.defense}</span></div>
+                    <div class="stat"><span>Velocidade:</span><span>${card.speed}</span></div>
+                    <div class="rarity ${rarityClass(card.rarity)}">${card.rarity}</div>
+                </div>
+            `;
+            area.appendChild(cardDiv);
+        });
+    }
+
+    // Função principal de captura usando a foto da câmera
+    function capturePhoto() {
+        if (!video.videoWidth || video.videoWidth === 0) {
+            alert("A câmera ainda não está pronta. Aguarde ou permita acesso.");
+            return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        
+        // Sorteia uma carta do bestiário com stats
+        const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+        // Adiciona pequenas variações no ataque/defesa para deixar único (opcional)
+        const attackVariation = Math.floor(Math.random() * 11) - 5; // -5 a +5
+        const defenseVariation = Math.floor(Math.random() * 11) - 5;
+        let finalAttack = Math.max(30, randomAnimal.attack + attackVariation);
+        let finalDefense = Math.max(30, randomAnimal.defense + defenseVariation);
+        
+        const newCard = {
+            ...randomAnimal,
+            attack: finalAttack,
+            defense: finalDefense,
+            image: imageData,
+            id: Date.now() + Math.random() * 1000
+        };
+        collection.push(newCard);
+        // Atualiza coleção
+        renderCollection();
+        // Mostra preview da carta capturada
+        renderCapturedCard(newCard);
+        // Feedback sonoro visual
+        alert(`✔️ ${newCard.name} foi adicionado à sua coleção!`);
+        // Se quiser dar refresh na batalha caso já tivesse selecionado
+    }
+
+    // ------------------------------
+    // 3. SISTEMA DE BATALHA EVOLUÍDO
+    // ------------------------------
+    function updateLifeBars() {
+        const playerLifeDiv = document.getElementById('playerLife');
+        const enemyLifeDiv = document.getElementById('enemyLife');
+        if (playerLifeDiv) playerLifeDiv.style.width = Math.max(0, playerHP) + '%';
+        if (enemyLifeDiv) enemyLifeDiv.style.width = Math.max(0, enemyHP) + '%';
+    }
+
+    function startBattle() {
+        if (collection.length === 0) {
+            alert("Você não possui cartas! Capture um animal primeiro na CÂMERA.");
+            return;
+        }
+        // Escolhe uma carta aleatória da coleção para ser o combatente do jogador
+        const randomIndex = Math.floor(Math.random() * collection.length);
+        playerBattleCard = { ...collection[randomIndex] }; // clonar
+        
+        // Inimigo aleatório do bestiário global (pode ser lendário)
+        const randomEnemy = animals[Math.floor(Math.random() * animals.length)];
+        enemyBattleCard = { ...randomEnemy };
+        
+        // Vida total baseada na defesa (mais dinamismo)
+        playerHP = 80 + Math.floor(playerBattleCard.defense / 1.5);
+        enemyHP = 75 + Math.floor(enemyBattleCard.defense / 1.5);
+        if (playerHP > 150) playerHP = 150;
+        if (enemyHP > 155) enemyHP = 155;
+        
+        // Atualiza interface da arena
+        document.getElementById('playerCard').innerHTML = `
+            <h3>🔥 ${playerBattleCard.name}</h3>
+            <p>⚔️ Ataque: ${playerBattleCard.attack}</p>
+            <p>🛡️ Defesa: ${playerBattleCard.defense}</p>
+            <p>✨ ${playerBattleCard.skill}</p>
+            <span class="badge">${playerBattleCard.rarity}</span>
+        `;
+        document.getElementById('enemyCard').innerHTML = `
+            <h3>👾 ${enemyBattleCard.name}</h3>
+            <p>⚔️ Ataque: ${enemyBattleCard.attack}</p>
+            <p>🛡️ Defesa: ${enemyBattleCard.defense}</p>
+            <p>💢 ${enemyBattleCard.skill}</p>
+            <span class="badge">${enemyBattleCard.rarity}</span>
+        `;
+        updateLifeBars();
+        document.getElementById('battleLog').innerHTML = `⚡ BATALHA INICIADA! ⚡<br>${playerBattleCard.name} VS ${enemyBattleCard.name}. Atacar!`;
+    }
+    
+    function attack() {
+        if (!playerBattleCard || !enemyBattleCard) {
+            alert("Inicie uma batalha primeiro (botão INICIAR BATALHA)");
+            return;
+        }
+        if (playerHP <= 0) {
+            document.getElementById('battleLog').innerHTML = "❌ Você já foi derrotado! Inicie uma nova batalha.";
+            return;
+        }
+        if (enemyHP <= 0) {
+            document.getElementById('battleLog').innerHTML = "🏆 Inimigo derrotado! Inicie outra batalha para enfrentar novo oponente.";
+            return;
+        }
+        
+        // Cálculo de dano mais profundo: ataque + fator velocidade + sorte
+        let playerDamage = Math.floor((playerBattleCard.attack * (Math.random() * 0.6 + 0.7)) + (playerBattleCard.speed / 12));
+        let enemyDamage = Math.floor((enemyBattleCard.attack * (Math.random() * 0.6 + 0.7)) + (enemyBattleCard.speed / 12));
+        
+        // Mínimo 8 de dano
+        playerDamage = Math.max(8, playerDamage);
+        enemyDamage = Math.max(8, enemyDamage);
+        
+        // Redução de dano baseado na defesa do oponente (fórmula simples)
+        const playerDefReduction = Math.floor(playerBattleCard.defense / 18);
+        const enemyDefReduction = Math.floor(enemyBattleCard.defense / 18);
+        const finalEnemyDamage = Math.max(5, enemyDamage - playerDefReduction);
+        const finalPlayerDamage = Math.max(5, playerDamage - enemyDefReduction);
+        
+        // Aplica dano
+        enemyHP -= finalPlayerDamage;
+        playerHP -= finalEnemyDamage;
+        
+        if (enemyHP < 0) enemyHP = 0;
+        if (playerHP < 0) playerHP = 0;
+        
+        updateLifeBars();
+        
+        let logMessage = `💥 ${playerBattleCard.name} ataca e causa ${finalPlayerDamage} de dano!<br>😈 ${enemyBattleCard.name} revida com ${finalEnemyDamage} de dano!`;
+        
+        // Verifica habilidades especiais baseadas na raridade (efeito narrativo)
+        if (playerBattleCard.rarity === 'Lendário' && Math.random() > 0.7) {
+            const extra = Math.floor(finalPlayerDamage * 0.5);
+            enemyHP -= extra;
+            if (enemyHP < 0) enemyHP = 0;
+            updateLifeBars();
+            logMessage += `<br>✨ HABILIDADE LENDÁRIA: ${playerBattleCard.skill} causou +${extra}!`;
+        }
+        if (enemyBattleCard.rarity === 'Lendário' && Math.random() > 0.7) {
+            const extraEnemy = Math.floor(finalEnemyDamage * 0.5);
+            playerHP -= extraEnemy;
+            if (playerHP < 0) playerHP = 0;
+            updateLifeBars();
+            logMessage += `<br>🌋 HABILIDADE INIMIGA: ${enemyBattleCard.skill} causou +${extraEnemy}!`;
+        }
+        
+        // resultados finais
+        if (enemyHP <= 0) {
+            logMessage += `<br><br>🏆 VITÓRIA! Você derrotou ${enemyBattleCard.name}! Inicie nova batalha. 🏆`;
+            document.getElementById('battleLog').innerHTML = logMessage;
+            playerBattleCard = null; // evita atacar após morte
+        } 
+        else if (playerHP <= 0) {
+            logMessage += `<br><br>💀 DERROTA... Seu guerreiro caiu. Inicie outra batalha. 💀`;
+            document.getElementById('battleLog').innerHTML = logMessage;
+            playerBattleCard = null;
+        } 
+        else {
+            document.getElementById('battleLog').innerHTML = logMessage;
+        }
+    }
+
+    // ------------------------------
+    // 4. TROCAS SIMULADAS (imersão)
+    // ------------------------------
+    function fakeTrade() {
+        if (collection.length === 0) {
+            document.getElementById('tradeResult').innerHTML = `<p style="color:cyan;">⚠️ Você não tem cartas para trocar! Capture alguns animais primeiro.</p>`;
+            return;
+        }
+        // Lista de cartas possíveis que o outro jogador pode oferecer (animais lendarios/epicos)
+        const tradePool = [...animals];
+        const randomCardOffer = tradePool[Math.floor(Math.random() * tradePool.length)];
+        // Simula uma troca aleatória com uma carta da sua coleção (para dar emoção)
+        const myRandomCard = collection[Math.floor(Math.random() * collection.length)];
+        const offerName = randomCardOffer.name;
+        const offerRarity = randomCardOffer.rarity;
+        
+        let tradeHtml = `
+            <div style="text-align:center;">
+                <h3>🔁 PARCEIRO ENCONTRADO!</h3>
+                <p style="background:#0e1a2a; border-radius:20px; padding:12px;">
+                    Jogador <strong>CyberTrainer</strong> quer trocar:<br>
+                    🃏 <span style="font-size:1.4rem;color:gold;">${offerName}</span> (${offerRarity})<br>
+                    pela sua carta:<br>
+                    🎴 <strong>${myRandomCard.name}</strong> (${myRandomCard.rarity})
+                </p>
+                <div style="display:flex; gap:16px; justify-content:center; margin-top:16px;">
+                    <button onclick="acceptTrade('${myRandomCard.id}', '${randomCardOffer.name}', '${randomCardOffer.rarity}', '${offerName}', '${randomCardOffer.animal}', '${randomCardOffer.element}', ${randomCardOffer.attack}, ${randomCardOffer.defense}, ${randomCardOffer.speed}, '${randomCardOffer.skill}', '${randomCardOffer.image ? randomCardOffer.image : ''}')">✅ ACEITAR TROCA</button>
+                    <button onclick="document.getElementById('tradeResult').innerHTML='<p>🌀 Troca recusada... Busque novamente.</p>'">❌ RECUSAR</button>
+                </div>
+            </div>
+        `;
+        // Guardamos os dados da oferta no escopo para aceitar
+        window.pendingTradeOffer = { 
+            offeredCard: randomCardOffer, 
+            myCardId: myRandomCard.id 
+        };
+        document.getElementById('tradeResult').innerHTML = tradeHtml;
+    }
+
+    // Função global para aceitar a troca (remove carta do jogador e adiciona a nova)
+    window.acceptTrade = function(myCardId, offerName, offerRarity, fullName, animal, element, attack, defense, speed, skill, imgPlaceholder) {
+        // Encontra índice da carta minha
+        const cardIndex = collection.findIndex(c => c.id == myCardId);
+        if (cardIndex === -1) {
+            document.getElementById('tradeResult').innerHTML = "<p style='color:red'>❌ Erro: carta não encontrada na coleção!</p>";
+            return;
+        }
+        // Cria nova carta vinda da troca (precisamos de uma imagem placeholder? Usaremos uma imagem gerada via canvas com símbolo)
+        // Para não quebrar a estética, criamos uma imagem base64 placeholder com design
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 400;
+        tempCanvas.height = 400;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = "#120e2c";
+        tempCtx.fillRect(0,0,400,400);
+        tempCtx.fillStyle = "#0ff";
+        tempCtx.font = "bold 24px Orbitron";
+        tempCtx.fillText(offerName, 70, 200);
+        tempCtx.fillStyle = "white";
+        tempCtx.font = "18px monospace";
+        tempCtx.fillText("Troca Mística", 130, 280);
+        const tradeImage = tempCanvas.toDataURL();
+        
+        const newTradedCard = {
+            name: fullName,
+            animal: animal,
+            element: element,
+            rarity: offerRarity,
+            attack: attack,
+            defense: defense,
+            speed: speed,
+            skill: skill,
+            image: tradeImage,
+            id: Date.now()
+        };
+        // Remove a carta antiga
+        collection.splice(cardIndex, 1);
+        // Adiciona nova
+        collection.push(newTradedCard);
+        renderCollection();
+        document.getElementById('tradeResult').innerHTML = `<div style="background:#0f2a1f; border-radius:26px; padding:16px;">🎉 TROCA REALIZADA! Você recebeu <strong>${fullName}</strong> (${offerRarity}) e perdeu sua carta antiga. 🎉</div>`;
+        // Atualiza coleção visualmente
+        setTimeout(() => {
+            showSection('collectionSection');
+        }, 1200);
+    };
+
+    // ------------------------------
+    // 5. NAVEGAÇÃO ENTRE SEÇÕES
+    // ------------------------------
+    function showSection(sectionId) {
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(sec => sec.classList.remove('active'));
+        const target = document.getElementById(sectionId);
+        if (target) target.classList.add('active');
+        // Se for coleção, re-render para evitar assincronia
+        if (sectionId === 'collectionSection') renderCollection();
+        if (sectionId === 'battleSection') {
+            // Se já houver batalha ativa, mantém, apenas visual
+            if(!playerBattleCard) document.getElementById('battleLog').innerHTML = "⚔️ Inicie uma batalha para desafiar adversários!";
+        }
+    }
+
+    // Inicialização
+    renderCollection();
+    // pré carregamento da camera pode demorar, mas tudo certo.
+</script>
+</body>
+</html>
